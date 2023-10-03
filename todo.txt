@@ -1,0 +1,7 @@
+Set up git repo [X]
+List items in items.csv []
+List add-ons in add_ons.csv []
+List ingredients in stock.csv []
+List merch in merch.csv []
+Write script to generate 1-year orders history in orders.csv []
+Put data into database []
