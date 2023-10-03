@@ -9,8 +9,8 @@ Put data into database []
 Attributes and entities should be mostly in the same format as they appear in database design format
 
 EXAMPLE CSV FORMAT (Stock):
-stockID, stockName, quantity, expireDate
-0, whole_milk, 8, 2023-04-23
-1, espresso_beans, 400, 2023-8-02
+stockID,stockName,quantity,expireDate
+0,whole_milk,8,2023-04-23
+1,espresso_beans,400,2023-8-02
 ...
 
