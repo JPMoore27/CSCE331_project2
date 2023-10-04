@@ -1,0 +1,10 @@
+addonID,addonName,price,dairy
+0,oatMilk,0.99,no
+1,soyMilk,0.99,no
+2,almondMilk,0.99,no
+3,coconutMilk,0.99,no
+4,vanillaSyrup,0.5,no
+5,hazelnutSyrup,0.5,no
+6,sugarfreeVanillaSyrup,0.5,no
+7,singleShot,-0.5,no
+8,halfHalf,0.5,yes
