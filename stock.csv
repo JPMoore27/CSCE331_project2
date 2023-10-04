@@ -1,11 +1,11 @@
-stockID	stockName	unit
-0	spresso_bin	kg
-1	coffee_bin	kg
-2	whole_milk	gallon
-3	oat_milk	gallon
-4	soy_milk	gallon
-5	almond_milk	gallon
-6	coconut_milk	gallon
-7	vanilla_syrup	bottle
-8	hazelnut_syrup	bottle
-9	sugar_free_vanilla_syrup	bottle
+stockID,stockName,unit
+0,spressoBIn,kg
+1,coffeeBin	,kg
+2,wholeMilk	,gallon
+3,oatMilk,gallon
+4,soyMilk,gallon
+5,almondMilk,gallon
+6,coconut,Milk,gallon
+7,vanillaSyrup,bottle
+8,hazelnutSyrup,bottle
+9,sfVanillaSyrup,bottle
