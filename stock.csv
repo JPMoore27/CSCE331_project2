@@ -11,3 +11,7 @@ stockID,stockName,amount,unit,use
 9,sfVanillaSyrup,101.4,oz,1
 10,halfHalf,5,gallon,0.07
 11,cream,5,gallon,0.07
+12,brownSugarSyrup,101.4,oz,1
+13,spicyMapleSyrup,101.4,oz,1
+14,caramelSyrup,101.4,oz,1
+15,irishCremeSyrup,101.4,oz,1
