@@ -1,7 +1,7 @@
 stockID,stockName,unit
 0,spressoBIn,kg
-1,coffeeBin	,kg
-2,wholeMilk	,gallon
+1,coffeeBin,kg
+2,wholeMilk,gallon
 3,oatMilk,gallon
 4,soyMilk,gallon
 5,almondMilk,gallon
@@ -9,3 +9,5 @@ stockID,stockName,unit
 7,vanillaSyrup,bottle
 8,hazelnutSyrup,bottle
 9,sfVanillaSyrup,bottle
+10,halfHalf,gallon
+11,cream,gallon
