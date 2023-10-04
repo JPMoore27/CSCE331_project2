@@ -11,10 +11,17 @@ file.write("orderID,items,time,name,takeOut,totalCost")
 day = date(2022, 1, 1)
 
 for i in range(365):
-    idString = str(i)
+    
+    numOrders = randint(30, 40)
+    #peak day implementaion
+    if(day == date(2022, 1, 11) or day == date(2022, 8, 23)):
+        numOrders *= 4
 
-    itemsString = ""
-    #for i in randint(1,4):
-        
+    
+    for j in range(numOrders)
+        idString = str(i+j)
+    
+        for i in randint:
+
     dateString = day.strftime("%Y-%m-%d")
     day += timedelta(days=1)
