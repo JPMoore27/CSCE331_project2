@@ -17,6 +17,15 @@ import java.awt.Font;
   4) Add the new object to the JPanel p
 */
 
+
+/*
+ * This method queries items and stock from the database, and then creates a POS system GUI containing them
+ *
+ *@author JP,Alireza,Jaein,Kaamish
+ *@param none
+ *@returns none
+ *@throws none 
+ */
 public class GUI extends JFrame implements ActionListener {
     static JFrame f;
 
@@ -48,7 +57,7 @@ public class GUI extends JFrame implements ActionListener {
         ResultSet result = stmt.executeQuery(sqlStatement);
 	String prevName = "";
         while (result.next()) {
-          names.add(result.getString("stockname"));
+          names.add(result.getString("stockname") + " - " + result.getString("amount") + " " + result.getString("unit"));
 	  
         }
       } catch (Exception e){
@@ -71,6 +80,7 @@ public class GUI extends JFrame implements ActionListener {
 	button.setPreferredSize(new Dimension(450, 120));
 	button.setBackground(new Color(0xE6E6E6));
 	button.setFont(buttonFont);
+	button.addActionListener(s);
         pButtons.add(button);
       }	
 
@@ -119,5 +129,8 @@ public class GUI extends JFrame implements ActionListener {
         if (s.equals("Close")) {
             f.dispose();
         }
+	else {
+    	    ResultSet result = stmt.executeQuery("");		
+	}
     }
 }
