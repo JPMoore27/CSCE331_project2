@@ -27,6 +27,7 @@ public class GUI extends JFrame implements ActionListener {
         f = new JFrame("Order Management");
 
         JPanel p = new JPanel();
+        p.setBackground(new Color(0xCC601D));
 
         JButton addOrderButton = new JButton("Add New Order");
         addOrderButton.addActionListener(gui);
@@ -62,7 +63,9 @@ public class GUI extends JFrame implements ActionListener {
 
     private void showItemsOrderedByItemID() {
         JFrame itemFrame = new JFrame("Select Items");
+        itemFrame.setBackground(new Color(0xCC601D));
         itemPanel = new JPanel();
+        itemPanel.setBackground(new Color(0xCC601D));
         itemPanel.setLayout(new GridLayout(5, 5, 5, 5));
 
         selectedItemsTextArea = new JTextArea(20, 40);
@@ -75,7 +78,9 @@ public class GUI extends JFrame implements ActionListener {
         textAreaPanel.add(scrollPane);
 
         totalLabel = new JLabel("Total Amount Due: $0.00");
+        totalLabel.setBackground(new Color(0xCC601D));
         totalPanel = new JPanel();
+        totalPanel.setBackground(new Color(0xCC601D));
         totalPanel.add(totalLabel);
 
         List<String> itemsWithPrices = getItemsWithPrices();
@@ -90,12 +95,15 @@ public class GUI extends JFrame implements ActionListener {
                     updateTotalAndTextArea(item);
                 }
             });
+            itemButton.setBackground(new Color(0xE6E6E6));
             itemPanel.add(itemButton);
         }
 
         buttonPanel = new JPanel();
+        buttonPanel.setBackground(new Color(0xCC601D));
 
         JButton clearOrderButton = new JButton("Clear Order");
+        clearOrderButton.setBackground(new Color(0xE6E6E6));
         clearOrderButton.setPreferredSize(new Dimension(BUTTON_WIDTH, BUTTON_HEIGHT));
         clearOrderButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -105,6 +113,7 @@ public class GUI extends JFrame implements ActionListener {
         buttonPanel.add(clearOrderButton);
 
         JButton payButton = new JButton("Pay");
+        payButton.setBackground(new Color(0xE6E6E6));
         payButton.setPreferredSize(new Dimension(BUTTON_WIDTH, BUTTON_HEIGHT));
         payButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -127,8 +136,8 @@ public class GUI extends JFrame implements ActionListener {
 
     private void updateTotalAndTextArea(String item) {
         // Parse the item name and price
-        String itemName = item.split(" - Price: \\$")[0];
-        double price = Double.parseDouble(item.split(" - Price: \\$")[1]);
+        String itemName = item.split(": \\$")[0];
+        double price = Double.parseDouble(item.split(": \\$")[1]);
 
         // Update selected items and their quantities
         if (selectedItems.containsKey(itemName)) {
@@ -200,7 +209,7 @@ public class GUI extends JFrame implements ActionListener {
             while (result.next()) {
                 String itemName = result.getString("ItemName");
                 double price = result.getDouble("Price");
-                itemsWithPrices.add(itemName + " - Price: $" + price);
+                itemsWithPrices.add(itemName + ": $" + price);
             }
         } catch (Exception e) {
             JOptionPane.showMessageDialog(null, "Error accessing Database.");
