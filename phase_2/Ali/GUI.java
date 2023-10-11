@@ -43,8 +43,8 @@ public class GUI extends JFrame implements ActionListener {
         try {
             conn = DriverManager.getConnection(
                     "jdbc:postgresql://csce-315-db.engr.tamu.edu/csce315331_03g_db",
-                    "csce331_903_amahdavi",
-                    "arma12271381");
+                    "csce331_903_jp_moore",
+                    "coll1n");
         } catch (Exception e) {
             e.printStackTrace();
             System.err.println(e.getClass().getSimpleName() + ": " + e.getMessage());
@@ -93,6 +93,7 @@ public class GUI extends JFrame implements ActionListener {
             itemButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     updateTotalAndTextArea(item);
+                    showAddOnsForItem(item); // Display addons when an item is clicked
                 }
             });
             itemButton.setBackground(new Color(0xE6E6E6));
@@ -132,6 +133,45 @@ public class GUI extends JFrame implements ActionListener {
         itemFrame.add(totalPanel, BorderLayout.NORTH);
         itemFrame.pack();
         itemFrame.setVisible(true);
+    }
+
+    private void showAddOnsForItem(String item) {
+        // Create a new panel for add-ons
+        JPanel addOnPanel = new JPanel();
+        addOnPanel.setBackground(new Color(0xE6E6E6));
+        addOnPanel.setLayout(new BoxLayout(addOnPanel, BoxLayout.Y_AXIS)); // Vertical layout
+
+        try {
+            // Query the database for addon names and prices for the selected item
+            Statement stmt = conn.createStatement();
+            String sqlStatement = "SELECT AddonName, Price FROM addons";
+            ResultSet result = stmt.executeQuery(sqlStatement);
+
+            // Iterate through the result and display addon names and prices
+            while (result.next()) {
+                String addonName = result.getString("AddonName");
+                double addonPrice = result.getDouble("Price");
+                JButton addonButton = new JButton(addonName + ": $" + addonPrice);
+                addonButton.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        // Update the total amount when an addon button is clicked
+                        updateTotalAndTextArea(addonName + ": $" + addonPrice);
+                    }
+                });
+                addOnPanel.add(addonButton);
+            }
+
+            stmt.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Error accessing Database.");
+        }
+
+        // Create a new frame to display the add-ons
+        JFrame addOnFrame = new JFrame("Add-ons for " + item);
+        addOnFrame.add(addOnPanel);
+        addOnFrame.pack();
+        addOnFrame.setVisible(true);
     }
 
     private void updateTotalAndTextArea(String item) {
@@ -198,7 +238,6 @@ public class GUI extends JFrame implements ActionListener {
         JOptionPane.showMessageDialog(null, paymentMessage.toString());
         clearOrder();
     }
-
 
     private List<String> getItemsWithPrices() {
         List<String> itemsWithPrices = new ArrayList<>();
