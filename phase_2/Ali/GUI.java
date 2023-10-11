@@ -18,7 +18,7 @@ public class GUI extends JFrame implements ActionListener {
     JLabel totalLabel;
     double totalAmount = 0.0;
     Map<String, Integer> selectedItems = new HashMap<>(); // Map to track selected items and their quantities
-    Map<String, List<String>> itemAddons = new HashMap<>(); // Map to track addons for each selected item
+    Map<String, List<String>> itemAddons = new HashMap<>(); // Map to track selected addons for each item
 
     private static final int BUTTON_WIDTH = 200;
     private static final int BUTTON_HEIGHT = 30;
@@ -87,7 +87,6 @@ public class GUI extends JFrame implements ActionListener {
         List<String> itemsWithPrices = getItemsWithPrices();
         totalAmount = 0.0;
         selectedItems.clear(); // Clear the selected items and quantities map
-        itemAddons.clear(); // Clear the selected addons map
 
         for (String item : itemsWithPrices) {
             JButton itemButton = new JButton(item);
@@ -95,7 +94,7 @@ public class GUI extends JFrame implements ActionListener {
             itemButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     updateTotalAndTextArea(item);
-                    showAddOnsForItem(item);
+                    showAddOnsForItem(item); // Display addons when an item is clicked
                 }
             });
             itemButton.setBackground(new Color(0xE6E6E6));
@@ -146,7 +145,7 @@ public class GUI extends JFrame implements ActionListener {
         try {
             // Query the database for addon names and prices for the selected item
             Statement stmt = conn.createStatement();
-            String sqlStatement = "SELECT AddonName, Price, dairy FROM addons";
+            String sqlStatement = "SELECT AddonName, Price FROM addons";
             ResultSet result = stmt.executeQuery(sqlStatement);
 
             // Create a list to track selected addons for this item
@@ -171,6 +170,16 @@ public class GUI extends JFrame implements ActionListener {
                 addOnPanel.add(addonCheckbox);
             }
 
+            // Create a "Done!" button
+            JButton doneButton = new JButton("Done!");
+            doneButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    // Close the addon panel
+                    ((JFrame) SwingUtilities.getRoot(addOnPanel)).dispose();
+                }
+            });
+            addOnPanel.add(doneButton);
+
             // Store the selected addons for this item
             itemAddons.put(item, selectedAddonsForItem);
 
@@ -181,7 +190,7 @@ public class GUI extends JFrame implements ActionListener {
         }
 
         // Create a new frame to display the add-ons
-        JFrame addOnFrame = new JFrame("Add-ons for " + item);
+        JFrame addOnFrame = new JFrame("Add-ons for " + item.split(": \\$")[0]);
         addOnFrame.add(addOnPanel);
         addOnFrame.pack();
         addOnFrame.setVisible(true);
@@ -248,8 +257,17 @@ public class GUI extends JFrame implements ActionListener {
         for (Map.Entry<String, Integer> entry : selectedItems.entrySet()) {
             paymentMessage.append(entry.getKey()).append(" x").append(entry.getValue()).append("\n");
         }
+        // Add selected addons to the payment message
+        for (Map.Entry<String, List<String>> entry : itemAddons.entrySet()) {
+            String itemName = entry.getKey();
+            List<String> addons = entry.getValue();
+            for (String addon : addons) {
+                paymentMessage.append(" - " + itemName + ": " + addon + "\n");
+            }
+        }
         JOptionPane.showMessageDialog(null, paymentMessage.toString());
         clearOrder();
+        itemAddons.clear(); // Clear the selected addons
     }
 
     private List<String> getItemsWithPrices() {
