@@ -9,9 +9,11 @@ public class GUI extends JFrame implements ActionListener {
     static JFrame f;
     Connection conn = null;
     JPanel itemPanel;
-    JPanel buttonPanel;
+    JPanel textAreaPanel; // New panel for the text area
+    JTextArea selectedItemsTextArea;
+    JPanel buttonPanel; // New panel for buttons
+    JPanel totalPanel;
     JLabel totalLabel;
-    JTextArea selectedItemsTextArea; // New text area to display selected items
     double totalAmount = 0.0;
 
     private static final int BUTTON_WIDTH = 200;
@@ -29,7 +31,7 @@ public class GUI extends JFrame implements ActionListener {
         p.add(addOrderButton);
 
         f.add(p);
-        f.setSize(800, 600); // Adjust the frame size
+        f.setSize(800, 600);
         f.setVisible(true);
     }
 
@@ -60,6 +62,19 @@ public class GUI extends JFrame implements ActionListener {
         itemPanel = new JPanel();
         itemPanel.setLayout(new GridLayout(5, 5, 5, 5)); // 5 rows, 5 columns with 5px gaps
 
+        selectedItemsTextArea = new JTextArea(20, 40);
+        selectedItemsTextArea.setEditable(false);
+
+        JScrollPane scrollPane = new JScrollPane(selectedItemsTextArea);
+        scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        textAreaPanel = new JPanel();
+        textAreaPanel.add(scrollPane);
+
+        totalLabel = new JLabel("Total Amount Due: $0.00");
+        totalPanel = new JPanel();
+        totalPanel.add(totalLabel);
+
         List<String> itemsWithPrices = getItemsOrderedByItemID();
         totalAmount = 0.0;
 
@@ -74,20 +89,7 @@ public class GUI extends JFrame implements ActionListener {
             itemPanel.add(itemButton);
         }
 
-        // Create a separate panel for total amount and clear order button
         buttonPanel = new JPanel();
-
-        selectedItemsTextArea = new JTextArea(10, 40); // Text area to display selected items
-        selectedItemsTextArea.setEditable(false); // Make it non-editable
-
-        // Place the text area at the top left of the screen
-        JScrollPane scrollPane = new JScrollPane(selectedItemsTextArea);
-        scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
-        scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        buttonPanel.add(scrollPane);
-
-        totalLabel = new JLabel("Total Amount Due: $0.00");
-        buttonPanel.add(totalLabel);
 
         // Create a "Clear Order" button
         JButton clearOrderButton = new JButton("Clear Order");
@@ -99,9 +101,22 @@ public class GUI extends JFrame implements ActionListener {
         });
         buttonPanel.add(clearOrderButton);
 
+        // Create a "Pay" button
+        JButton payButton = new JButton("Pay");
+        payButton.setPreferredSize(new Dimension(BUTTON_WIDTH, BUTTON_HEIGHT));
+        payButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                pay();
+            }
+        });
+        buttonPanel.add(payButton);
+
+        itemFrame.add(textAreaPanel, BorderLayout.WEST); // Add text area to the left
         itemFrame.add(itemPanel, BorderLayout.CENTER);
-        itemFrame.add(buttonPanel, BorderLayout.NORTH);
-        itemFrame.pack(); // Automatically adjust the frame size
+        itemFrame.add(buttonPanel, BorderLayout.SOUTH);
+
+        itemFrame.add(totalPanel, BorderLayout.NORTH);
+        itemFrame.pack();
         itemFrame.setVisible(true);
     }
 
@@ -141,5 +156,11 @@ public class GUI extends JFrame implements ActionListener {
         totalAmount = 0.0;
         updateTotalLabel();
         selectedItemsTextArea.setText(""); // Clear the text area
+    }
+
+    private void pay() {
+        // Perform the payment operation here
+        JOptionPane.showMessageDialog(null, "Payment processed. Total Amount: $" + String.format("%.2f", totalAmount));
+        clearOrder(); // Clear the order after payment
     }
 }
