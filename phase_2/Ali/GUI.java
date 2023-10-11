@@ -3,18 +3,21 @@ import java.awt.event.*;
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class GUI extends JFrame implements ActionListener {
     static JFrame f;
     Connection conn = null;
     JPanel itemPanel;
-    JPanel textAreaPanel; // New panel for the text area
+    JPanel textAreaPanel;
     JTextArea selectedItemsTextArea;
-    JPanel buttonPanel; // New panel for buttons
+    JPanel buttonPanel;
     JPanel totalPanel;
     JLabel totalLabel;
     double totalAmount = 0.0;
+    Map<String, Integer> selectedItems = new HashMap<>(); // Map to track selected items and their quantities
 
     private static final int BUTTON_WIDTH = 200;
     private static final int BUTTON_HEIGHT = 30;
@@ -60,7 +63,7 @@ public class GUI extends JFrame implements ActionListener {
     private void showItemsOrderedByItemID() {
         JFrame itemFrame = new JFrame("Select Items");
         itemPanel = new JPanel();
-        itemPanel.setLayout(new GridLayout(5, 5, 5, 5)); // 5 rows, 5 columns with 5px gaps
+        itemPanel.setLayout(new GridLayout(5, 5, 5, 5));
 
         selectedItemsTextArea = new JTextArea(20, 40);
         selectedItemsTextArea.setEditable(false);
@@ -75,8 +78,9 @@ public class GUI extends JFrame implements ActionListener {
         totalPanel = new JPanel();
         totalPanel.add(totalLabel);
 
-        List<String> itemsWithPrices = getItemsOrderedByItemID();
+        List<String> itemsWithPrices = getItemsWithPrices();
         totalAmount = 0.0;
+        selectedItems.clear(); // Clear the selected items and quantities map
 
         for (String item : itemsWithPrices) {
             JButton itemButton = new JButton(item);
@@ -91,7 +95,6 @@ public class GUI extends JFrame implements ActionListener {
 
         buttonPanel = new JPanel();
 
-        // Create a "Clear Order" button
         JButton clearOrderButton = new JButton("Clear Order");
         clearOrderButton.setPreferredSize(new Dimension(BUTTON_WIDTH, BUTTON_HEIGHT));
         clearOrderButton.addActionListener(new ActionListener() {
@@ -101,17 +104,19 @@ public class GUI extends JFrame implements ActionListener {
         });
         buttonPanel.add(clearOrderButton);
 
-        // Create a "Pay" button
         JButton payButton = new JButton("Pay");
         payButton.setPreferredSize(new Dimension(BUTTON_WIDTH, BUTTON_HEIGHT));
         payButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                pay();
+                String customerName = JOptionPane.showInputDialog("Enter Customer Name:");
+                if (customerName != null) {
+                    pay(customerName);
+                }
             }
         });
         buttonPanel.add(payButton);
 
-        itemFrame.add(textAreaPanel, BorderLayout.WEST); // Add text area to the left
+        itemFrame.add(textAreaPanel, BorderLayout.WEST);
         itemFrame.add(itemPanel, BorderLayout.CENTER);
         itemFrame.add(buttonPanel, BorderLayout.SOUTH);
 
@@ -120,7 +125,73 @@ public class GUI extends JFrame implements ActionListener {
         itemFrame.setVisible(true);
     }
 
-    private List<String> getItemsOrderedByItemID() {
+    private void updateTotalAndTextArea(String item) {
+        // Parse the item name and price
+        String itemName = item.split(" - Price: \\$")[0];
+        double price = Double.parseDouble(item.split(" - Price: \\$")[1]);
+
+        // Update selected items and their quantities
+        if (selectedItems.containsKey(itemName)) {
+            selectedItems.put(itemName, selectedItems.get(itemName) + 1);
+        } else {
+            selectedItems.put(itemName, 1);
+        }
+
+        totalAmount += price;
+        updateTotalLabel();
+        updateSelectedItemsTextArea();
+    }
+
+    private void updateTotalLabel() {
+        totalLabel.setText("Total Amount Due: $" + String.format("%.2f", totalAmount));
+    }
+
+    private void updateSelectedItemsTextArea() {
+        selectedItemsTextArea.setText(""); // Clear the text area
+        for (Map.Entry<String, Integer> entry : selectedItems.entrySet()) {
+            selectedItemsTextArea.append(entry.getKey() + " x" + entry.getValue() + "\n");
+        }
+    }
+
+    private void clearOrder() {
+        totalAmount = 0.0;
+        updateTotalLabel();
+        selectedItems.clear(); // Clear the selected items and quantities map
+        updateSelectedItemsTextArea();
+    }
+
+    private void pay(String customerName) {
+        String[] options = {"Dine-In", "Takeout"};
+        int choice = JOptionPane.showOptionDialog(
+                null,
+                "Is this order for dine-in or takeout?",
+                "Order Type",
+                JOptionPane.DEFAULT_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                options,
+                options[0]
+        );
+
+        String orderType;
+        if (choice == 0) {
+            orderType = "Dine-In";
+        } else {
+            orderType = "Takeout";
+        }
+
+        // Perform the payment operation here
+        StringBuilder paymentMessage = new StringBuilder("Payment processed for ");
+        paymentMessage.append(customerName).append(" (").append(orderType).append("). Total Amount: $").append(String.format("%.2f", totalAmount)).append("\n");
+        for (Map.Entry<String, Integer> entry : selectedItems.entrySet()) {
+            paymentMessage.append(entry.getKey()).append(" x").append(entry.getValue()).append("\n");
+        }
+        JOptionPane.showMessageDialog(null, paymentMessage.toString());
+        clearOrder();
+    }
+
+
+    private List<String> getItemsWithPrices() {
         List<String> itemsWithPrices = new ArrayList<>();
         try {
             Statement stmt = conn.createStatement();
@@ -135,32 +206,5 @@ public class GUI extends JFrame implements ActionListener {
             JOptionPane.showMessageDialog(null, "Error accessing Database.");
         }
         return itemsWithPrices;
-    }
-
-    private void updateTotalAndTextArea(String item) {
-        double price = Double.parseDouble(item.split(" - Price: \\$")[1]);
-        totalAmount += price;
-        updateTotalLabel();
-        updateSelectedItemsTextArea(item);
-    }
-
-    private void updateTotalLabel() {
-        totalLabel.setText("Total Amount Due: $" + String.format("%.2f", totalAmount));
-    }
-
-    private void updateSelectedItemsTextArea(String item) {
-        selectedItemsTextArea.append(item + "\n");
-    }
-
-    private void clearOrder() {
-        totalAmount = 0.0;
-        updateTotalLabel();
-        selectedItemsTextArea.setText(""); // Clear the text area
-    }
-
-    private void pay() {
-        // Perform the payment operation here
-        JOptionPane.showMessageDialog(null, "Payment processed. Total Amount: $" + String.format("%.2f", totalAmount));
-        clearOrder(); // Clear the order after payment
     }
 }
