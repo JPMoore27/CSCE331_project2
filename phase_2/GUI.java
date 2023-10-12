@@ -28,6 +28,8 @@ import java.awt.Font;
  */
 public class GUI extends JFrame implements ActionListener {
     static JFrame f;
+    public static List<JButton> stockButtons;
+    public static JButton addSub;
 
     public static void main(String[] args)
     {
@@ -46,18 +48,18 @@ public class GUI extends JFrame implements ActionListener {
       }
       //JOptionPane.showMessageDialog(null,"Opened database successfully");
 
-      List<String> names = new ArrayList<String>();
+      stockButtons = new ArrayList<JButton>();
       try{
         //create a statement object
         Statement stmt = conn.createStatement();
         //create a SQL statement
         //TODO Step 2
-        String sqlStatement = "SELECT * FROM stock";
+        String sqlStatement = "SELECT * FROM stock ORDER BY stockid;";
         //send statement to DBMS
         ResultSet result = stmt.executeQuery(sqlStatement);
 	String prevName = "";
         while (result.next()) {
-          names.add(result.getString("stockname") + " - " + result.getString("amount") + " " + result.getString("unit"));
+          stockButtons.add(new JButton(result.getString("stockname") + " - " + result.getString("amount") + " " + result.getString("unit")));
 	  
         }
       } catch (Exception e){
@@ -70,13 +72,12 @@ public class GUI extends JFrame implements ActionListener {
       GUI s = new GUI();
 
       // create buttons
-      JPanel pButtons = new JPanel(new GridLayout(6, names.size(), 10, 10));
+      JPanel pButtons = new JPanel(new GridLayout(6, stockButtons.size(), 10, 10));
       //JPanel p = new JPanel();
       pButtons.setBackground(new Color(0xCC601D));
       Font buttonFont = new Font("Arial", Font.PLAIN, 18);      
 
-      for (String str : names) {
-	JButton button = new JButton(str);
+      for (JButton button : stockButtons) {
 	button.setPreferredSize(new Dimension(450, 120));
 	button.setBackground(new Color(0xE6E6E6));
 	button.setFont(buttonFont);
@@ -84,7 +85,13 @@ public class GUI extends JFrame implements ActionListener {
         pButtons.add(button);
       }	
 
- 
+      addSub = new JButton("Add");
+      addSub.setPreferredSize(new Dimension(450, 120));
+      addSub.setBackground(new Color(0x77DD77));
+      addSub.setFont(buttonFont);
+      addSub.addActionListener(s);
+      pButtons.add(addSub);
+
       JPanel pMain = new JPanel(new BorderLayout());
       pMain.setBackground(new Color(0xCC601D));
       pMain.add(pButtons, BorderLayout.CENTER);
@@ -92,6 +99,7 @@ public class GUI extends JFrame implements ActionListener {
       JButton returnButton = new JButton("Return");
       returnButton.setPreferredSize(new Dimension(450, 120));
       returnButton.setBackground(new Color(0xFF6961));
+      returnButton.addActionListener(s);
       pMain.add(returnButton, BorderLayout.SOUTH);
 
       // add actionlistener to button
@@ -116,7 +124,7 @@ public class GUI extends JFrame implements ActionListener {
       //closing the connection
       try {
         conn.close();
-        JOptionPane.showMessageDialog(null,"Connection Closed.");
+        //JOptionPane.showMessageDialog(null,"Connection Closed.");
       } catch(Exception e) {
         JOptionPane.showMessageDialog(null,"Connection NOT Closed.");
       }
@@ -126,11 +134,47 @@ public class GUI extends JFrame implements ActionListener {
     public void actionPerformed(ActionEvent e)
     {
         String s = e.getActionCommand();
-        if (s.equals("Close")) {
+        if (s.equals("Return")) {
             f.dispose();
         }
+	else if (s.equals("Add")) {
+	    addSub.setText("Subtract");
+	}
+	else if (s.equals("Subtract")) {
+	    addSub.setText("Add");
+	}
 	else {
-    	    ResultSet result = stmt.executeQuery("");		
+	    Connection conn = null;
+      		//TODO STEP 1
+      	    try {
+              conn = DriverManager.getConnection(
+              "jdbc:postgresql://csce-315-db.engr.tamu.edu/csce315331_03g_db",
+              "csce331_903_jp_moore",
+              "coll1n");
+            } catch (Exception exc) {
+            exc.printStackTrace();
+            System.err.println(e.getClass().getName()+": "+exc.getMessage());
+            System.exit(0);
+        }
+	    try {
+	    //get stockname
+	    String[] sSplit = s.split(" ");
+    	    //update database	    
+	    Statement stmt = conn.createStatement();
+
+	    int addorsub = -1;
+	    if(addSub.getText().equals("Add")) {addorsub = 1;}
+
+    	    stmt.executeUpdate("UPDATE stock SET amount = amount + " + addorsub + " WHERE stockname = \'" + sSplit[0] + "\';");
+    	    //get id
+    	    ResultSet stockID = stmt.executeQuery("SELECT stockid FROM stock WHERE stockname = \'" + sSplit[0] + "\';");
+
+		
+	    //System.out.println(sSplit[0] + " " + sSplit[1] + " " + (Integer.parseInt(sSplit[2]) + 1) + " " + sSplit[3]);
+	    stockID.next();
+	    stockButtons.get(Integer.parseInt(stockID.getString("stockid"))).setText(sSplit[0] + " " + sSplit[1] + " " + (Integer.parseInt(sSplit[2]) + addorsub) + " " + sSplit[3]); 
+
+	    } catch(Exception exc) {System.err.println(e.getClass().getName()+": "+exc.getMessage());};
 	}
     }
 }
