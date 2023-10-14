@@ -2,10 +2,8 @@ import java.sql.*;
 import java.awt.event.*;
 import javax.swing.*;
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 
 public class GUI extends JFrame implements ActionListener {
     static JFrame f;
@@ -22,13 +20,15 @@ public class GUI extends JFrame implements ActionListener {
 
     private static final int BUTTON_WIDTH = 200;
     private static final int BUTTON_HEIGHT = 30;
+    private static final Color ITEM_PANEL_COLOR = new Color(0xCC601D);
 
     public static void main(String[] args) {
+        // Entry point of the application
         GUI gui = new GUI();
         f = new JFrame("Order Management");
 
         JPanel p = new JPanel();
-        p.setBackground(new Color(0xCC601D));
+        p.setBackground(ITEM_PANEL_COLOR);
 
         JButton addOrderButton = new JButton("Add New Order");
         addOrderButton.addActionListener(gui);
@@ -41,6 +41,7 @@ public class GUI extends JFrame implements ActionListener {
     }
 
     public GUI() {
+        // Constructor to initialize the GUI and establish a database connection
         try {
             conn = DriverManager.getConnection(
                     "jdbc:postgresql://csce-315-db.engr.tamu.edu/csce315331_03g_db",
@@ -55,6 +56,7 @@ public class GUI extends JFrame implements ActionListener {
     }
 
     public void actionPerformed(ActionEvent e) {
+        // Handle actions when a button is clicked
         String s = e.getActionCommand();
 
         if (s.equals("Add New Order")) {
@@ -63,11 +65,13 @@ public class GUI extends JFrame implements ActionListener {
     }
 
     private void showItemsOrderedByItemID() {
+        // Display the items available for ordering
         JFrame itemFrame = new JFrame("Select Items");
-        itemFrame.setBackground(new Color(0xCC601D));
+        itemFrame.setBackground(ITEM_PANEL_COLOR);
         itemPanel = new JPanel();
-        itemPanel.setBackground(new Color(0xCC601D));
+        itemPanel.setBackground(ITEM_PANEL_COLOR);
         itemPanel.setLayout(new GridLayout(5, 5, 5, 5));
+
 
         selectedItemsTextArea = new JTextArea(20, 40);
         selectedItemsTextArea.setEditable(false);
@@ -79,9 +83,9 @@ public class GUI extends JFrame implements ActionListener {
         textAreaPanel.add(scrollPane);
 
         totalLabel = new JLabel("Total Amount Due: $0.00");
-        totalLabel.setBackground(new Color(0xCC601D));
+        totalLabel.setBackground(ITEM_PANEL_COLOR);
         totalPanel = new JPanel();
-        totalPanel.setBackground(new Color(0xCC601D));
+        totalPanel.setBackground(ITEM_PANEL_COLOR);
         totalPanel.add(totalLabel);
 
         List<String> itemsWithPrices = getItemsWithPrices();
@@ -102,10 +106,10 @@ public class GUI extends JFrame implements ActionListener {
         }
 
         buttonPanel = new JPanel();
-        buttonPanel.setBackground(new Color(0xCC601D));
+        buttonPanel.setBackground(ITEM_PANEL_COLOR);
 
         JButton clearOrderButton = new JButton("Clear Order");
-        clearOrderButton.setBackground(new Color(0xE6E6E6));
+        clearOrderButton.setBackground(new Color(0xff2400)); // Red color
         clearOrderButton.setPreferredSize(new Dimension(BUTTON_WIDTH, BUTTON_HEIGHT));
         clearOrderButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -115,7 +119,7 @@ public class GUI extends JFrame implements ActionListener {
         buttonPanel.add(clearOrderButton);
 
         JButton payButton = new JButton("Pay");
-        payButton.setBackground(new Color(0xE6E6E6));
+        payButton.setBackground(new Color(0x4cbb17)); // Green color
         payButton.setPreferredSize(new Dimension(BUTTON_WIDTH, BUTTON_HEIGHT));
         payButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -137,10 +141,11 @@ public class GUI extends JFrame implements ActionListener {
     }
 
     private void showAddOnsForItem(String item) {
-        // Create a new panel for add-ons
+        // Display available addons for a selected item
         JPanel addOnPanel = new JPanel();
-        addOnPanel.setBackground(new Color(0xE6E6E6));
-        addOnPanel.setLayout(new BoxLayout(addOnPanel, BoxLayout.Y_AXIS)); // Vertical layout
+        addOnPanel.setBackground(ITEM_PANEL_COLOR); // Match the color to the items panel
+        addOnPanel.setLayout(new GridLayout(3, 3, 5, 5)); // 3x3 button layout
+
 
         try {
             // Query the database for addon names and prices for the selected item
@@ -149,39 +154,39 @@ public class GUI extends JFrame implements ActionListener {
             ResultSet result = stmt.executeQuery(sqlStatement);
 
             // Create a list to track selected addons for this item
-            List<String> selectedAddonsForItem = new ArrayList<>();
+            final List<String> selectedAddonsForItem = new ArrayList<>(); // Use final here
 
             // Iterate through the result and display addon names and prices
             while (result.next()) {
                 String addonName = result.getString("AddonName");
                 double addonPrice = result.getDouble("Price");
-                JCheckBox addonCheckbox = new JCheckBox(addonName + ": $" + addonPrice);
-                addonCheckbox.addActionListener(new ActionListener() {
+                JButton addonButton = new JButton(addonName + ": $" + addonPrice);
+                addonButton.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
-                        if (addonCheckbox.isSelected()) {
+                        if (!selectedAddonsForItem.contains(addonName)) {
                             selectedAddonsForItem.add(addonName);
                             updateTotalAndTextArea(addonName + ": $" + addonPrice);
                         } else {
                             selectedAddonsForItem.remove(addonName);
-                            updateTotalAndTextArea("-" + addonName + ": $" + addonPrice);
+                            updateTotalAndTextArea(addonName + ": $" + addonPrice);
                         }
                     }
                 });
-                addOnPanel.add(addonCheckbox);
+                addonButton.setBackground(new Color(0xE6E6E6));
+                addOnPanel.add(addonButton);
             }
 
             // Create a "Done!" button
             JButton doneButton = new JButton("Done!");
+            doneButton.setBackground(new Color(0x4cbb17)); // Green color
             doneButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     // Close the addon panel
+                    itemAddons.put(item, selectedAddonsForItem);
                     ((JFrame) SwingUtilities.getRoot(addOnPanel)).dispose();
                 }
             });
             addOnPanel.add(doneButton);
-
-            // Store the selected addons for this item
-            itemAddons.put(item, selectedAddonsForItem);
 
             stmt.close();
         } catch (SQLException e) {
@@ -197,6 +202,7 @@ public class GUI extends JFrame implements ActionListener {
     }
 
     private void updateTotalAndTextArea(String item) {
+        // Update the total amount and the text area that displays selected items
         // Parse the item name and price
         String itemName = item.split(": \\$")[0];
         double price = Double.parseDouble(item.split(": \\$")[1]);
@@ -214,10 +220,12 @@ public class GUI extends JFrame implements ActionListener {
     }
 
     private void updateTotalLabel() {
+        // Update the label that displays the total amount
         totalLabel.setText("Total Amount Due: $" + String.format("%.2f", totalAmount));
     }
 
     private void updateSelectedItemsTextArea() {
+        // Update the text area that displays the selected items
         selectedItemsTextArea.setText(""); // Clear the text area
         for (Map.Entry<String, Integer> entry : selectedItems.entrySet()) {
             selectedItemsTextArea.append(entry.getKey() + " x" + entry.getValue() + "\n");
@@ -225,13 +233,16 @@ public class GUI extends JFrame implements ActionListener {
     }
 
     private void clearOrder() {
+        // Clear the selected items, quantities, and addons
         totalAmount = 0.0;
         updateTotalLabel();
         selectedItems.clear(); // Clear the selected items and quantities map
         updateSelectedItemsTextArea();
+        itemAddons.clear(); // Clear item add-ons
     }
 
     private void pay(String customerName) {
+        // Process the payment for the order
         String[] options = {"Dine-In", "Takeout"};
         int choice = JOptionPane.showOptionDialog(
                 null,
@@ -267,10 +278,11 @@ public class GUI extends JFrame implements ActionListener {
         }
         JOptionPane.showMessageDialog(null, paymentMessage.toString());
         clearOrder();
-        itemAddons.clear(); // Clear the selected addons
+        itemAddons.clear();
     }
 
     private List<String> getItemsWithPrices() {
+        // Retrieve items and their prices from the database
         List<String> itemsWithPrices = new ArrayList<>();
         try {
             Statement stmt = conn.createStatement();
@@ -286,4 +298,6 @@ public class GUI extends JFrame implements ActionListener {
         }
         return itemsWithPrices;
     }
+
+     
 }
