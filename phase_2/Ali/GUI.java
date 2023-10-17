@@ -33,7 +33,11 @@ public class GUI extends JFrame implements ActionListener {
         JButton addOrderButton = new JButton("Add New Order");
         addOrderButton.addActionListener(gui);
 
+	JButton addStockButton = new JButton("View Stock");
+        addStockButton.addActionListener(gui);
+
         p.add(addOrderButton);
+        p.add(addStockButton);
 
         f.add(p);
         f.setSize(800, 600);
@@ -62,6 +66,9 @@ public class GUI extends JFrame implements ActionListener {
         if (s.equals("Add New Order")) {
             showItemsOrderedByItemID();
         }
+	else if(s.equals("View Stock")) {
+	    ManagerGUI.managerGUI();
+	}
     }
 
     private void showItemsOrderedByItemID() {
@@ -298,6 +305,7 @@ public class GUI extends JFrame implements ActionListener {
         }
         return itemsWithPrices;
     }
+
 
      
 }
