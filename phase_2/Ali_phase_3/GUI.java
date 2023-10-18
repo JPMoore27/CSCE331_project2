@@ -69,7 +69,7 @@ public class GUI extends JFrame implements ActionListener {
         if (s.equals("Add New Order")) {
             showItemsOrderedByItemID();
         } else if (s.equals("View Stock")) {
-            ManagerGUI.managerGUI();
+            newItemsGUI.itemGUI();
         }
     }
 
