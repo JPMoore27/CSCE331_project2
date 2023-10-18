@@ -30,7 +30,7 @@ public class MenuGUI extends JFrame implements ActionListener {
     static JFrame f;
     public static List<JButton> stockButtons;
     public static JButton addSub;
-    Connection conn = null;
+    
 
     /*
     * This method queries items from the database, and then creates a POS system GUI containing them
@@ -43,6 +43,7 @@ public class MenuGUI extends JFrame implements ActionListener {
     public static void menuGUI()
     {
       //TODO STEP 1
+      Connection conn = null;
       try {
         conn = DriverManager.getConnection(
           "jdbc:postgresql://csce-315-db.engr.tamu.edu/csce315331_03g_db",
@@ -156,15 +157,15 @@ public class MenuGUI extends JFrame implements ActionListener {
 	    String[] sSplit = s.split(" ");
         String itemName = sSplit[0];
     	    //update database	    
-	    Statement stmt = conn.createStatement();
+	    //Statement stmt = conn.createStatement();
 
         //get id:
-	    ResultSet stockID = stmt.executeQuery("");
+	    //ResultSet stockID = stmt.executeQuery("");
 
 		
 	    //System.out.println(sSplit[0] + " " + sSplit[1] + " " + (Integer.parseInt(sSplit[2]) + 1) + " " + sSplit[3]);
-	    stockID.next();
-	    stockButtons.get(Integer.parseInt(stockID.getString("stockid"))).setText(sSplit[0] + " " + sSplit[1] + " " + (Integer.parseInt(sSplit[2]) + addorsub) + " " + sSplit[3]); 
+	    //stockID.next();
+ 
 
 	    } catch(Exception exc) {System.err.println(e.getClass().getName()+": "+exc.getMessage());};
 	}

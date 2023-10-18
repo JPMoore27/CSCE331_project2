@@ -6,6 +6,16 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+
+
+/*
+ * This class handles creates a report of all stock with amounts under a certain threshold
+ *
+ *@author JP
+ *@param none
+ *@returns none
+ *@throws none 
+ */
 public class RestockReport extends JFrame {
     private JTextArea textArea;
 
@@ -65,6 +75,14 @@ public class RestockReport extends JFrame {
         }
     }
 
+    /*
+    * Asks for a threshold value then generates a restock report. Report is shown in a java swing window
+    *
+    *@author JP
+    *@param none
+    *@returns none
+    *@throws SQLError if something is wrong with the database
+    */
     public static void generateReport() {
         RestockReport restockReport = new RestockReport();
         restockReport.setVisible(true);

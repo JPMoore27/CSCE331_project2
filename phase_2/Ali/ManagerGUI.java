@@ -9,13 +9,7 @@ import java.awt.Dimension;
 import java.awt.Color;
 import java.awt.BorderLayout;
 import java.awt.Font;
-/*
-  TODO:
-  1) Change credentials for your own team's database
-  2) Change SQL command to a relevant query that retrieves a small amount of data
-  3) Create a JTextArea object using the queried data
-  4) Add the new object to the JPanel p
-*/
+
 
 
 /*
