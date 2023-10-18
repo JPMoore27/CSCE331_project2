@@ -134,6 +134,7 @@ public class GUI extends JFrame implements ActionListener {
                 String customerName = JOptionPane.showInputDialog("Enter Customer Name:");
                 if (customerName != null) {
                     pay(customerName);
+
                 }
             }
         });
@@ -348,7 +349,7 @@ public class GUI extends JFrame implements ActionListener {
                     insertStatement.setDouble(7, price);
                 } else {
                     orderType = (choice == 0) ? "Dine-In" : "Takeout";
-
+                    updateStock(itemId);
                     insertStatement.setInt(1, newOrderId);
                     insertStatement.setInt(2, itemId);
                     insertStatement.setInt(3, quantity);
@@ -421,73 +422,30 @@ public class GUI extends JFrame implements ActionListener {
         return itemId;
     }
 
-    private void updateStock(String customerName) {
-        String[] options = {"Dine-In", "Takeout"};
-        int choice = JOptionPane.showOptionDialog(
-                null,
-                "Is this order for dine-in or takeout?",
-                "Order Type",
-                JOptionPane.DEFAULT_OPTION,
-                JOptionPane.QUESTION_MESSAGE,
-                null,
-                options,
-                options[0]
-        );
-
-        // Declare and initialize currentTime within the try block
-        Timestamp currentTime = new Timestamp(System.currentTimeMillis());
-
+    private void updateStock(int stockID) {
         try {
-            PreparedStatement insertStatement = conn.prepareStatement("INSERT INTO orders (orderid, itemid, quantity, time, customername, takeout, price) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            // Create a PreparedStatement to update the stock
+            PreparedStatement updateStatement = conn.prepareStatement(
+                    "UPDATE stock AS s " +
+                            "SET amount = amount - use " +
+                            "FROM items AS i " +
+                            "WHERE s.stockid = i.stockid " +
+                            "AND i.stockid = ?");
 
-            int maxOrderId = getMaxOrderIdFromOrdersTable();
+            // Provide the specific stock_id as a parameter
+            updateStatement.setInt(1, stockID);
 
-            for (Map.Entry<String, Integer> entry : selectedItems.entrySet()) {
-                String fullItemName = entry.getKey();
-                String itemName = fullItemName.split(": \\$")[0];
-                int quantity = entry.getValue();
+            // Execute the update statement
+            int rowsUpdated = updateStatement.executeUpdate();
 
-                int itemId = getItemIdFromItemsTable(itemName);
-                int newOrderId = maxOrderId + 1;
-                String orderType;
-
-                if (itemId == -1) {
-                    double price = getPriceForItem(itemName, quantity);
-                    itemId = -1;
-                    orderType = "Takeout";
-
-                    insertStatement.setInt(1, newOrderId);
-                    insertStatement.setInt(2, itemId);
-                    insertStatement.setInt(3, quantity);
-                    insertStatement.setTimestamp(4, currentTime);
-                    insertStatement.setString(5, customerName);
-                    insertStatement.setBoolean(6, true);
-                    insertStatement.setDouble(7, price);
-                } else {
-                    orderType = (choice == 0) ? "Dine-In" : "Takeout";
-
-                    insertStatement.setInt(1, newOrderId);
-                    insertStatement.setInt(2, itemId);
-                    insertStatement.setInt(3, quantity);
-                    insertStatement.setTimestamp(4, currentTime);
-                    insertStatement.setString(5, customerName);
-                    insertStatement.setBoolean(6, orderType.equals("Takeout"));
-                    insertStatement.setDouble(7, getPriceForItem(itemName, quantity));
-                }
-
-                insertStatement.executeUpdate();
-
-                paymentMessage.append(itemName).append(" x").append(quantity).append(" - $").append(String.format("%.2f", getPriceForItem(itemName, quantity))).append("\n");
-
-                maxOrderId = newOrderId;
+            // Check if rows were updated and display a warning if the amount becomes 0
+            if (rowsUpdated == 0) {
+                JOptionPane.showMessageDialog(null, "Warning: Stock quantity reached 0.");
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            JOptionPane.showMessageDialog(null, "Error processing payment.");
+            JOptionPane.showMessageDialog(null, "Error processing stock update.");
         }
-
-        JOptionPane.showMessageDialog(null, paymentMessage.toString());
-        clearOrder();
-        itemAddons.clear();
     }
+
 }
