@@ -19,30 +19,29 @@ import java.awt.Font;
 
 
 /*
- * This class handles creating the GUI for updating inventory
+ * This class handles creating the GUI for editing the menu
  *
  *@author JP
  *@param none
  *@returns none
  *@throws none 
  */
-public class ManagerGUI extends JFrame implements ActionListener {
+public class MenuGUI extends JFrame implements ActionListener {
     static JFrame f;
     public static List<JButton> stockButtons;
     public static JButton addSub;
+    Connection conn = null;
 
     /*
-    * This method queries stock from the database, and then creates a POS system GUI containing them
+    * This method queries items from the database, and then creates a POS system GUI containing them
     *
     *@author JP,Alireza,Jaein,Kaamish
     *@param none
     *@returns none
     *@throws none 
     */
-    public static void managerGUI()
+    public static void menuGUI()
     {
-      //Building the connection
-      Connection conn = null;
       //TODO STEP 1
       try {
         conn = DriverManager.getConnection(
@@ -62,31 +61,31 @@ public class ManagerGUI extends JFrame implements ActionListener {
         Statement stmt = conn.createStatement();
         //create a SQL statement
         //TODO Step 2
-        String sqlStatement = "SELECT * FROM stock ORDER BY stockid;";
+        String sqlStatement = "SELECT * FROM items ORDER BY itemid;";
         //send statement to DBMS
         ResultSet result = stmt.executeQuery(sqlStatement);
 	String prevName = "";
         while (result.next()) {
-          stockButtons.add(new JButton(result.getString("stockname") + " - " + result.getString("amount") + " " + result.getString("unit")));
+          stockButtons.add(new JButton(result.getString("itemname") + " - " + result.getString("price")));
 	  
         }
       } catch (Exception e){
         JOptionPane.showMessageDialog(null,"Error accessing Database.");
       }
       // create a new frame
-      f = new JFrame("Stock View");
+      f = new JFrame("Menu View");
 
       // create a object
-      ManagerGUI s = new ManagerGUI();
+      MenuGUI s = new MenuGUI();
 
       // create buttons
-      JPanel pButtons = new JPanel(new GridLayout(6, stockButtons.size(), 10, 10));
+      JPanel pButtons = new JPanel(new GridLayout(15, stockButtons.size(), 10, 10));
       //JPanel p = new JPanel();
       pButtons.setBackground(new Color(0xCC601D));
-      Font buttonFont = new Font("Arial", Font.PLAIN, 18);      
+      Font buttonFont = new Font("Arial", Font.PLAIN, 12);      
 
       for (JButton button : stockButtons) {
-        button.setPreferredSize(new Dimension(450, 120));
+        button.setPreferredSize(new Dimension(400, 30));
         button.setBackground(new Color(0xE6E6E6));
         button.setFont(buttonFont);
         button.addActionListener(s);
@@ -94,7 +93,7 @@ public class ManagerGUI extends JFrame implements ActionListener {
       }	
 
       addSub = new JButton("Add");
-      addSub.setPreferredSize(new Dimension(450, 120));
+      addSub.setPreferredSize(new Dimension(400, 50));
       addSub.setBackground(new Color(0x77DD77));
       addSub.setFont(buttonFont);
       addSub.addActionListener(s);
@@ -105,7 +104,7 @@ public class ManagerGUI extends JFrame implements ActionListener {
       pMain.add(pButtons, BorderLayout.CENTER);
 
       JButton returnButton = new JButton("Return");
-      returnButton.setPreferredSize(new Dimension(450, 120));
+      returnButton.setPreferredSize(new Dimension(100, 50));
       returnButton.setBackground(new Color(0xFF6961));
       returnButton.addActionListener(s);
       pMain.add(returnButton, BorderLayout.SOUTH);
@@ -152,30 +151,15 @@ public class ManagerGUI extends JFrame implements ActionListener {
 	    addSub.setText("Add");
 	}
 	else {
-	    Connection conn = null;
-      		//TODO STEP 1
-      	    try {
-              conn = DriverManager.getConnection(
-              "jdbc:postgresql://csce-315-db.engr.tamu.edu/csce315331_03g_db",
-              "csce331_903_jp_moore",
-              "coll1n");
-            } catch (Exception exc) {
-            exc.printStackTrace();
-            System.err.println(e.getClass().getName()+": "+exc.getMessage());
-            System.exit(0);
-        }
 	    try {
-	    //get stockname
+	    //get name
 	    String[] sSplit = s.split(" ");
+        String itemName = sSplit[0];
     	    //update database	    
 	    Statement stmt = conn.createStatement();
 
-	    int addorsub = -1;
-	    if(addSub.getText().equals("Add")) {addorsub = 1;}
-
-    	    stmt.executeUpdate("UPDATE stock SET amount = amount + " + addorsub + " WHERE stockname = \'" + sSplit[0] + "\';");
-    	    //get id
-    	    ResultSet stockID = stmt.executeQuery("SELECT stockid FROM stock WHERE stockname = \'" + sSplit[0] + "\';");
+        //get id:
+	    ResultSet stockID = stmt.executeQuery("");
 
 		
 	    //System.out.println(sSplit[0] + " " + sSplit[1] + " " + (Integer.parseInt(sSplit[2]) + 1) + " " + sSplit[3]);
@@ -185,4 +169,6 @@ public class ManagerGUI extends JFrame implements ActionListener {
 	    } catch(Exception exc) {System.err.println(e.getClass().getName()+": "+exc.getMessage());};
 	}
     }
+
+    
 }
