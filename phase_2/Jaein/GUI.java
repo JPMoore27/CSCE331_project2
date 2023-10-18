@@ -8,6 +8,14 @@ import java.util.*;
 import java.time.Instant;
 
 
+/*
+ * This method creates a POS system GUI and integrates sales report generating process
+ *
+ *@author Jaein
+ *@param none
+ *@returns none
+ *@throws none 
+ */
 public class GUI extends JFrame implements ActionListener {
     static JFrame f;
     public static JButton salesReportButton;
@@ -46,6 +54,14 @@ public class GUI extends JFrame implements ActionListener {
         });
     }
 
+    /*
+    * This method pops up a window to get an input, which is the start time for the time window for sales report
+    *
+    *@author Jaein
+    *@param none
+    *@returns Timestamp start_time
+    *@throws none 
+    */
     public static Timestamp getStartTime() {
         String start_time = JOptionPane.showInputDialog(message:"Enter start time of the time window");
         if (start_time != null) {
@@ -53,11 +69,45 @@ public class GUI extends JFrame implements ActionListener {
         }
     }
 
+    /*
+    * This method pops up a window to get an input, which is the end time for the time window for sales report
+    *
+    *@author Jaein
+    *@param none
+    *@returns Timestamp end_time
+    *@throws none 
+    */
     public static Timestamp getEndTime() {
         String end_time = JOptionPane.showInputDialog(message:"Enter end time of the time window");
         if (end_time != null) {
             return Timestamp.valueOf(end_time);
         }
+    }
+
+
+    /*
+    * This method completes query for the sales report and executes it to pull sales data from the order history datatable
+    *
+    *@author Jaein
+    *@param Timestamp start_time, Timestamp end_time
+    *@returns ResultSet result
+    *@throws none 
+    */
+    public ResultSet queryExecution(Timestamp start_time, Timestamp end_time) {
+        ResultSet result;
+        return result;
+    }
+
+    /*
+    * This method iterates through passed argument for parameter result to display the sales by menu item
+    *
+    *@author Jaein
+    *@param ResultSet result
+    *@returns none
+    *@throws none 
+    */
+    public void displayReport(ResultSet result) {
+        
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -72,5 +122,5 @@ public class GUI extends JFrame implements ActionListener {
         }
     }
 
-    private void 
+    // private void 
 }
