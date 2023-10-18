@@ -1,57 +1,61 @@
-package Jaein;
-
 import java.sql.*;
 import java.awt.event.*;
 import javax.swing.*;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableModel;
+
 import java.awt.*;
 import java.util.*;
 import java.time.Instant;
 
-
-/*
- * This method creates a POS system GUI and integrates sales report generating process
- *
- *@author Jaein
- *@param none
- *@returns none
- *@throws none 
- */
-public class GUI extends JFrame implements ActionListener {
-    static JFrame f;
+public class salesReportGUI extends JFrame implements ActionListener{
+    private static JFrame f = new JFrame();
+    Connection conn = null;
     public static JButton salesReportButton;
-    static Timestamp start_time;
-    static Timestamp end_time;
+    private static Timestamp start_time;
+    private static Timestamp end_time;
+    private static JLabel startInput = new JLabel("Please press the button and enter time window");
+    private static JLabel endInput = new JLabel();
+    private ResultSet result;
+    private String rows[] = {"1", "2", "3"};
+    private JList rowList = new JList(rows);
+    // private JTable table = new JTable();
 
-    private static final int BUTTON_WIDTH = 200;
-    private static final int BUTTON_HEIGHT = 30;
-
-    public static void main(String[] args)
-    {
-        //Building the connection
-        Connection conn = null;
-        //TODO STEP 1
+    public salesReportGUI() {
+        // Constructor to initialize the GUI and establish a database connection
         try {
             conn = DriverManager.getConnection(
-            "jdbc:postgresql://csce-315-db.engr.tamu.edu/csce315331_03g_db",
-            "csce331_903_jp_moore",
-            "coll1n");
+                    "jdbc:postgresql://csce-315-db.engr.tamu.edu/csce315331_03g_db",
+                    "csce331_903_jp_moore",
+                    "coll1n");
         } catch (Exception e) {
             e.printStackTrace();
-            System.err.println(e.getClass().getName()+": "+e.getMessage());
+            System.err.println(e.getClass().getSimpleName() + ": " + e.getMessage());
             System.exit(0);
         }
+        JOptionPane.showMessageDialog(null, "Database connection established");
 
-        String sqlStatement = "";
+        //Make a button to activate sales report
+        JButton button = new JButton("Sales Report");
+        button.addActionListener(this);
 
-        salesReportButton = new JButton(text:"Sales Report");
-        salesReportButton.setBackground(new Color(rgb:0x030303));
-        salesReportButton.setPreferredSize(new Dimension(BUTTON_WIDTH, BUTTON_HEIGHT));
-        salesReportButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                start_time = getStartTime();
-                end_time = getEndTime();
-            }
-        });
+        //Make a panel for sales report button
+        JPanel panel = new JPanel();
+        panel.setBorder(BorderFactory.createEmptyBorder(600, 600, 200, 600));
+        panel.setLayout(new GridLayout(0, 1));
+        panel.add(button);
+        panel.add(startInput);
+        panel.add(endInput);
+        panel.add(rowList);
+        // panel.add(table);
+
+        //Set up the frame and display
+        f.add(panel, BorderLayout.CENTER);
+        f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        f.setTitle("Sales Report");
+        f.pack();
+        f.setVisible(true);
     }
 
     /*
@@ -59,13 +63,14 @@ public class GUI extends JFrame implements ActionListener {
     *
     *@author Jaein
     *@param none
-    *@returns Timestamp start_time
+    *@returns none
     *@throws none 
     */
-    public static Timestamp getStartTime() {
-        String start_time = JOptionPane.showInputDialog(message:"Enter start time of the time window");
-        if (start_time != null) {
-            return Timestamp.valueOf(start_time);
+    public static void getStartTime() {
+        String starttime = JOptionPane.showInputDialog("Enter start time of the time window (format: yyyy-mm-dd hh:mm:ss)");
+        if (starttime != null) {
+            start_time = Timestamp.valueOf(starttime);
+            startInput.setText("Start Time: " + start_time);
         }
     }
 
@@ -74,53 +79,76 @@ public class GUI extends JFrame implements ActionListener {
     *
     *@author Jaein
     *@param none
-    *@returns Timestamp end_time
+    *@returns none
     *@throws none 
     */
-    public static Timestamp getEndTime() {
-        String end_time = JOptionPane.showInputDialog(message:"Enter end time of the time window");
-        if (end_time != null) {
-            return Timestamp.valueOf(end_time);
+    public static void getEndTime() {
+        String endtime = JOptionPane.showInputDialog("Enter end time of the time window (format: yyyy-mm-dd hh:mm:ss)");
+        if (endtime != null) {
+            end_time = Timestamp.valueOf(endtime);
+            endInput.setText("End Time: " + end_time);
         }
     }
-
 
     /*
     * This method completes query for the sales report and executes it to pull sales data from the order history datatable
     *
     *@author Jaein
-    *@param Timestamp start_time, Timestamp end_time
-    *@returns ResultSet result
-    *@throws none 
-    */
-    public ResultSet queryExecution(Timestamp start_time, Timestamp end_time) {
-        ResultSet result;
-        return result;
-    }
-
-    /*
-    * This method iterates through passed argument for parameter result to display the sales by menu item
-    *
-    *@author Jaein
-    *@param ResultSet result
+    *@param none
     *@returns none
-    *@throws none 
+    *@throws SQLException
     */
-    public void displayReport(ResultSet result) {
+    public void queryExecution() {
+        try {
+            Statement stmt = conn.createStatement();
+            String sqlQuery = "SELECT o.itemid, i.itemname, SUM(o.quantity) AS total_quantity, SUM(o.price * o.quantity) AS total_sales " +
+                                "FROM orders o " +
+                                "INNER JOIN items i " +
+                                "ON o.itemid = i.itemid " + 
+                                "WHERE o.time >= '" + start_time + "' AND o.time <= '" + end_time + "' " + 
+                                "GROUP BY o.itemid, i.itemname " +
+                                "ORDER BY total_sales DESC;";
+            result = stmt.executeQuery(sqlQuery);
+
+            stmt.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Error accessing Database.");
+        }
         
     }
 
-    public void actionPerformed(ActionEvent e) {
-        // Handle actions when a button is clicked
-        String s = e.getActionCommand();
+    /*
+    * This method iterates through the ResultSet Result result to display the sales by menu item
+    *
+    *@author Jaein
+    *@param none
+    *@returns none
+    *@throws none 
+    */
+    public void displayReport() {
+        int index = 0;
+        while (result.next()) {
+            String itemid = result.getString("itemid");
+            String itemname = result.getString("itemname");
+            String total_quantity = result.getString("total_quantity");
+            String sales = result.getString("total_sales");
+            String row = "itemid: " + itemid + "  " + "itemname: " + itemname + "  " + "total_quantity: " + total_quantity + "  " + "total_sales: $" + sales;
 
-        if (s.equals("Add New Order")) {
-            showItemsOrderedByItemID();
+            rows[index] = row;
+            index++;
         }
-	    else if(s.equals("View Stock")) {
-	        ManagerGUI.managerGUI();
-        }
+
+        rowList = new JList(rows);
     }
 
-    // private void 
+    public void actionPerformed(ActionEvent e) {
+        getStartTime();
+        getEndTime();
+        queryExecution();
+    }
+
+    public static void main(String[] args) {
+        new salesReportGUI();
+    }
 }
