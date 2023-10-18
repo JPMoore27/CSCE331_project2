@@ -39,8 +39,16 @@ public class GUI extends JFrame implements ActionListener {
         JButton addStockButton = new JButton("View Stock");
         addStockButton.addActionListener(gui);
 
+        JButton menuButton = new JButton("View Menu");
+        menuButton.addActionListener(gui);
+
+        JButton NewItemButton = new JButton("Add New Item");
+        NewItemButton.addActionListener(gui);
+
         p.add(addOrderButton);
         p.add(addStockButton);
+        p.add(menuButton);
+        p.add(NewItemButton);
 
         f.add(p);
         f.setSize(800, 600);
@@ -70,7 +78,12 @@ public class GUI extends JFrame implements ActionListener {
             showItemsOrderedByItemID();
         } else if (s.equals("View Stock")) {
             newItemsGUI.itemGUI();
+        }else if(s.equals("View Menu")) {
+            ManagerGUI.managerGUI();
+        }else if(s.equals("Add New Item")) {
+            newItemsGUI.itemGUI();
         }
+
     }
 
     private void showItemsOrderedByItemID() {
