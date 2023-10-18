@@ -1,8 +1,8 @@
 import java.sql.*;
 import java.awt.event.*;
 import javax.swing.*;
-import java.util.List; // Specify java.util.List
-import java.util.ArrayList; // Specify java.util.ArrayList
+import java.util.List;
+import java.util.ArrayList;
 import java.awt.*;
 import java.awt.Color;
 import java.awt.Font;
@@ -12,18 +12,21 @@ public class newItemsGUI extends JFrame implements ActionListener {
     static JFrame f;
     public static List<JButton> ingredientsButtons = new ArrayList<>();
     public static JButton addSub;
+    public static JButton clearButton;
     public static JButton returnButton;
     public static JTextField itemNameField;
-    public static JTextField priceField; // Added input field for price
+    public static JTextField priceField;
     public static JRadioButton dairyRadio;
     public static JRadioButton notDairyRadio;
     public static ButtonGroup dairyButtonGroup;
+    public static DefaultListModel<String> selectedIngredientsModel = new DefaultListModel<>();
+    public static JList<String> selectedIngredientsList = new JList<>(selectedIngredientsModel);
 
     static Connection conn = null;
 
     public newItemsGUI() {
         itemNameField = new JTextField(20);
-        priceField = new JTextField(20); // Initialize the price field
+        priceField = new JTextField(20);
         dairyRadio = new JRadioButton("Dairy");
         notDairyRadio = new JRadioButton("Not Dairy");
         dairyButtonGroup = new ButtonGroup();
@@ -32,7 +35,6 @@ public class newItemsGUI extends JFrame implements ActionListener {
     }
 
     public static void itemGUI() {
-        // TODO STEP 1
         try {
             conn = DriverManager.getConnection(
                     "jdbc:postgresql://csce-315-db.engr.tamu.edu/csce315331_03g_db",
@@ -46,12 +48,8 @@ public class newItemsGUI extends JFrame implements ActionListener {
 
         ingredientsButtons = new ArrayList<>();
         try {
-            // create a statement object
             Statement stmt = conn.createStatement();
-            // create a SQL statement
-            // TODO Step 2
             String sqlStatement = "SELECT * FROM stock ORDER BY stockid;";
-            // send statement to DBMS
             ResultSet result = stmt.executeQuery(sqlStatement);
             String prevName = "";
             while (result.next()) {
@@ -61,13 +59,9 @@ public class newItemsGUI extends JFrame implements ActionListener {
             JOptionPane.showMessageDialog(null, "Error accessing Database.");
         }
 
-        // create a new frame
         f = new JFrame("Menu View");
-
-        // create an object
         newItemsGUI s = new newItemsGUI();
 
-        // create buttons
         JPanel pButtons = new JPanel();
         pButtons.setLayout(new GridLayout(15, ingredientsButtons.size(), 10, 10));
         pButtons.setBackground(new Color(0xCC601D));
@@ -81,9 +75,12 @@ public class newItemsGUI extends JFrame implements ActionListener {
             pButtons.add(button);
         }
 
-        // Create a panel for input fields, including item name, price, and radio buttons
+        selectedIngredientsList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        selectedIngredientsList.setVisibleRowCount(5);
+        selectedIngredientsList.setLayoutOrientation(JList.VERTICAL);
+
         JPanel pInput = new JPanel();
-        pInput.setLayout(new BoxLayout(pInput, BoxLayout.LINE_AXIS)); // Horizontal layout
+        pInput.setLayout(new BoxLayout(pInput, BoxLayout.LINE_AXIS));
         pInput.setBackground(new Color(0xCC601D));
         pInput.add(new JLabel("Item Name: "));
         pInput.add(itemNameField);
@@ -99,7 +96,12 @@ public class newItemsGUI extends JFrame implements ActionListener {
         addSub.setFont(buttonFont);
         addSub.addActionListener(s);
 
-        // Move the "Return" button to the left of the "Add" button
+        clearButton = new JButton("Clear");
+        clearButton.setPreferredSize(new Dimension(200, 50));
+        clearButton.setBackground(new Color(0xCCCCCC));
+        clearButton.setFont(buttonFont);
+        clearButton.addActionListener(s);
+
         returnButton = new JButton("Return");
         returnButton.setPreferredSize(new Dimension(200, 50));
         returnButton.setBackground(new Color(0xFF6961));
@@ -107,41 +109,93 @@ public class newItemsGUI extends JFrame implements ActionListener {
 
         pButtons.add(returnButton);
         pButtons.add(addSub);
+        pButtons.add(clearButton);
 
-        // Use BorderLayout for the main panel
         JPanel pMain = new JPanel(new BorderLayout());
         pMain.setBackground(new Color(0xCC601D));
         pMain.add(pButtons, BorderLayout.CENTER);
-        pMain.add(pInput, BorderLayout.NORTH); // Position input fields at the top
+        pMain.add(selectedIngredientsList, BorderLayout.EAST);
+        pMain.add(pInput, BorderLayout.NORTH);
 
-        // Add the main panel to the frame
         f.add(pMain);
         f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         f.setSize(1000, 1000);
         f.pack();
         f.setVisible(true);
-
-        // Closing the connection...
     }
 
-    // If a button is pressed
     public void actionPerformed(ActionEvent e) {
         String s = e.getActionCommand();
         if (s.equals("Return")) {
             f.dispose();
         } else if (s.equals("Add")) {
-            // Get the item name and price from the input fields
             String itemName = itemNameField.getText();
             String price = priceField.getText();
-
-            // Check the selected radio button to determine if it's dairy or not
             boolean isDairy = dairyRadio.isSelected();
 
-            // You can now use itemName, price, isDairy, and the selected ingredients to add the new item to your database.
-            // Add the necessary database logic here.
+            try {
+                Statement maxIdStmt = conn.createStatement();
+                String maxIdQuery = "SELECT MAX(itemid) FROM items;";
+                ResultSet maxIdResult = maxIdStmt.executeQuery(maxIdQuery);
+                int maxItemId = 0;
+                if (maxIdResult.next()) {
+                    maxItemId = maxIdResult.getInt(1);
+                }
+                maxItemId++;
+
+                Statement maxKeyStmt = conn.createStatement();
+                String maxKeyQuery = "SELECT MAX(key) FROM items;";
+                ResultSet maxKeyResult = maxKeyStmt.executeQuery(maxKeyQuery);
+                int maxKey = 0;
+                if (maxKeyResult.next()) {
+                    maxKey = maxKeyResult.getInt(1);
+                }
+
+                for (int i = 0; i < selectedIngredientsModel.getSize(); i++) {
+                    String selectedIngredient = selectedIngredientsModel.getElementAt(i);
+                    maxKey++;
+                    int stockId = getStockIdForIngredientName(selectedIngredient);
+                    String insertQuery = "INSERT INTO items (key, itemid, itemname, stockid, dairy, price) VALUES (?, ?, ?, ?, ?, ?);";
+                    PreparedStatement insertStatement = conn.prepareStatement(insertQuery);
+                    insertStatement.setInt(1, maxKey);
+                    insertStatement.setInt(2, maxItemId);
+                    insertStatement.setString(3, itemName);
+                    insertStatement.setInt(4, stockId);
+                    insertStatement.setBoolean(5, isDairy);
+                    insertStatement.setDouble(6, Double.parseDouble(price));
+                    insertStatement.executeUpdate();
+                }
+
+                JOptionPane.showMessageDialog(null, "Items added to the database.");
+                selectedIngredientsModel.clear(); // Clear selected ingredients after adding items
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(null, "Error adding items to the database: " + ex.getMessage());
+            }
+        } else if (s.equals("Clear")) { // Clear button action
+            selectedIngredientsModel.clear(); // Clear selected ingredients
         } else {
-            // Handle ingredient selection here.
+            if (ingredientsButtons.contains(e.getSource())) {
+                JButton ingredientButton = (JButton) e.getSource();
+                String ingredientName = ingredientButton.getText();
+                selectedIngredientsModel.addElement(ingredientName);
+            }
         }
+    }
+
+    private int getStockIdForIngredientName(String ingredientName) {
+        try {
+            String query = "SELECT stockid FROM stock WHERE stockname = ?;";
+            PreparedStatement stmt = conn.prepareStatement(query);
+            stmt.setString(1, ingredientName);
+
+            ResultSet result = stmt.executeQuery();
+            if (result.next()) {
+                return result.getInt("stockid");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return -1;
     }
 
     public static void main(String[] args) {
