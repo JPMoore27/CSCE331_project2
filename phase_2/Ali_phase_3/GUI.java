@@ -22,6 +22,9 @@ public class GUI extends JFrame implements ActionListener {
     private static final int BUTTON_HEIGHT = 30;
     private static final Color ITEM_PANEL_COLOR = new Color(0xCC601D);
 
+    // Declare paymentMessage at the class level
+    private StringBuilder paymentMessage = new StringBuilder();
+
     public static void main(String[] args) {
         // Entry point of the application
         GUI gui = new GUI();
@@ -33,15 +36,11 @@ public class GUI extends JFrame implements ActionListener {
         JButton addOrderButton = new JButton("Add New Order");
         addOrderButton.addActionListener(gui);
 
-	    JButton addStockButton = new JButton("View Stock");
+        JButton addStockButton = new JButton("View Stock");
         addStockButton.addActionListener(gui);
-
-        JButton menuButton = new JButton("View Menu");
-        menuButton.addActionListener(gui);
 
         p.add(addOrderButton);
         p.add(addStockButton);
-        p.add(menuButton);
 
         f.add(p);
         f.setSize(800, 600);
@@ -69,13 +68,9 @@ public class GUI extends JFrame implements ActionListener {
 
         if (s.equals("Add New Order")) {
             showItemsOrderedByItemID();
+        } else if (s.equals("View Stock")) {
+            ManagerGUI.managerGUI();
         }
-	    else if(s.equals("View Stock")) {
-	        ManagerGUI.managerGUI();
-	    }
-        else if(s.equals("View Menu")) {
-	        MenuGUI.menuGUI();
-	    }
     }
 
     private void showItemsOrderedByItemID() {
@@ -85,7 +80,6 @@ public class GUI extends JFrame implements ActionListener {
         itemPanel = new JPanel();
         itemPanel.setBackground(ITEM_PANEL_COLOR);
         itemPanel.setLayout(new GridLayout(5, 5, 5, 5));
-
 
         selectedItemsTextArea = new JTextArea(20, 40);
         selectedItemsTextArea.setEditable(false);
@@ -160,7 +154,6 @@ public class GUI extends JFrame implements ActionListener {
         addOnPanel.setBackground(ITEM_PANEL_COLOR); // Match the color to the items panel
         addOnPanel.setLayout(new GridLayout(3, 3, 5, 5)); // 3x3 button layout
 
-
         try {
             // Query the database for addon names and prices for the selected item
             Statement stmt = conn.createStatement();
@@ -202,61 +195,116 @@ public class GUI extends JFrame implements ActionListener {
             });
             addOnPanel.add(doneButton);
 
+            JFrame addonFrame = new JFrame("Addons for " + item);
+            addonFrame.add(addOnPanel);
+            addonFrame.pack();
+            addonFrame.setVisible(true);
+
             stmt.close();
+            result.close();
         } catch (SQLException e) {
             e.printStackTrace();
-            JOptionPane.showMessageDialog(null, "Error accessing Database.");
+            JOptionPane.showMessageDialog(null, "Error retrieving addons for the item.");
         }
-
-        // Create a new frame to display the add-ons
-        JFrame addOnFrame = new JFrame("Add-ons for " + item.split(": \\$")[0]);
-        addOnFrame.add(addOnPanel);
-        addOnFrame.pack();
-        addOnFrame.setVisible(true);
     }
 
     private void updateTotalAndTextArea(String item) {
-        // Update the total amount and the text area that displays selected items
-        // Parse the item name and price
-        String itemName = item.split(": \\$")[0];
-        double price = Double.parseDouble(item.split(": \\$")[1]);
+        // Update the total amount and selected items text area
+        totalAmount += getPriceForItem(item, 1);
+        totalLabel.setText("Total Amount Due: $" + String.format("%.2f", totalAmount));
 
-        // Update selected items and their quantities
-        if (selectedItems.containsKey(itemName)) {
-            selectedItems.put(itemName, selectedItems.get(itemName) + 1);
+        if (selectedItems.containsKey(item)) {
+            selectedItems.put(item, selectedItems.get(item) + 1);
         } else {
-            selectedItems.put(itemName, 1);
+            selectedItems.put(item, 1);
         }
 
-        totalAmount += price;
-        updateTotalLabel();
-        updateSelectedItemsTextArea();
-    }
-
-    private void updateTotalLabel() {
-        // Update the label that displays the total amount
-        totalLabel.setText("Total Amount Due: $" + String.format("%.2f", totalAmount));
-    }
-
-    private void updateSelectedItemsTextArea() {
-        // Update the text area that displays the selected items
-        selectedItemsTextArea.setText(""); // Clear the text area
+        // Update the text area with the selected items
+        selectedItemsTextArea.setText("");
         for (Map.Entry<String, Integer> entry : selectedItems.entrySet()) {
-            selectedItemsTextArea.append(entry.getKey() + " x" + entry.getValue() + "\n");
+            String itemName = entry.getKey();
+            int quantity = entry.getValue();
+            selectedItemsTextArea.append(itemName + " x" + quantity + "\n");
         }
     }
 
     private void clearOrder() {
-        // Clear the selected items, quantities, and addons
+        // Clear the selected items and update the total amount
         totalAmount = 0.0;
-        updateTotalLabel();
-        selectedItems.clear(); // Clear the selected items and quantities map
-        updateSelectedItemsTextArea();
-        itemAddons.clear(); // Clear item add-ons
+        totalLabel.setText("Total Amount Due: $0.00");
+        selectedItems.clear();
+        selectedItemsTextArea.setText("");
+    }
+
+    private double getPriceForItem(String item, int quantity) {
+        // Calculate the price for an item with a given quantity
+        double itemPrice = 0.0;
+        String fullItemName = item;
+        String itemName = fullItemName.split(": \\$")[0];
+
+
+        try {
+            // Query the database for the price of the selected item
+            PreparedStatement stmt = conn.prepareStatement("SELECT Price FROM items WHERE ItemName = ?");
+            stmt.setString(1, itemName);
+            ResultSet result = stmt.executeQuery();
+
+            if (result.next()) {
+                itemPrice = result.getDouble("Price");
+            } else {
+                // Item not found in the 'items' table, check the 'addons' table
+                PreparedStatement addonStmt = conn.prepareStatement("SELECT Price FROM addons WHERE AddonName = ?");
+                addonStmt.setString(1, itemName);
+                ResultSet addonResult = addonStmt.executeQuery();
+
+                if (addonResult.next()) {
+                    itemPrice = addonResult.getDouble("Price");
+                } else {
+                    //System.out.println("No matching item found in the database for itemName: " + itemName);
+                }
+
+                addonStmt.close();
+                addonResult.close();
+            }
+
+            stmt.close();
+            result.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Error retrieving the price for the item.");
+        }
+
+        return itemPrice * quantity;
+    }
+
+
+    private List<String> getItemsWithPrices() {
+        // Retrieve the names of available items along with their prices
+        List<String> itemsWithPrices = new ArrayList<>();
+
+        try {
+            // Query the database for item names and prices
+            Statement stmt = conn.createStatement();
+            String sqlStatement = "SELECT Distinct ItemName, Price FROM items";
+            ResultSet result = stmt.executeQuery(sqlStatement);
+
+            while (result.next()) {
+                String itemName = result.getString("ItemName");
+                double itemPrice = result.getDouble("Price");
+                itemsWithPrices.add(itemName + ": $" + itemPrice);
+            }
+
+            stmt.close();
+            result.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Error retrieving item names and prices.");
+        }
+
+        return itemsWithPrices;
     }
 
     private void pay(String customerName) {
-        // Process the payment for the order
         String[] options = {"Dine-In", "Takeout"};
         int choice = JOptionPane.showOptionDialog(
                 null,
@@ -269,50 +317,177 @@ public class GUI extends JFrame implements ActionListener {
                 options[0]
         );
 
-        String orderType;
-        if (choice == 0) {
-            orderType = "Dine-In";
-        } else {
-            orderType = "Takeout";
+        // Declare and initialize currentTime within the try block
+        Timestamp currentTime = new Timestamp(System.currentTimeMillis());
+
+        try {
+            PreparedStatement insertStatement = conn.prepareStatement("INSERT INTO orders (orderid, itemid, quantity, time, customername, takeout, price) VALUES (?, ?, ?, ?, ?, ?, ?)");
+
+            int maxOrderId = getMaxOrderIdFromOrdersTable();
+
+            for (Map.Entry<String, Integer> entry : selectedItems.entrySet()) {
+                String fullItemName = entry.getKey();
+                String itemName = fullItemName.split(": \\$")[0];
+                int quantity = entry.getValue();
+
+                int itemId = getItemIdFromItemsTable(itemName);
+                int newOrderId = maxOrderId + 1;
+                String orderType;
+
+                if (itemId == -1) {
+                    double price = getPriceForItem(itemName, quantity);
+                    itemId = -1;
+                    orderType = "Takeout";
+
+                    insertStatement.setInt(1, newOrderId);
+                    insertStatement.setInt(2, itemId);
+                    insertStatement.setInt(3, quantity);
+                    insertStatement.setTimestamp(4, currentTime);
+                    insertStatement.setString(5, customerName);
+                    insertStatement.setBoolean(6, true);
+                    insertStatement.setDouble(7, price);
+                } else {
+                    orderType = (choice == 0) ? "Dine-In" : "Takeout";
+
+                    insertStatement.setInt(1, newOrderId);
+                    insertStatement.setInt(2, itemId);
+                    insertStatement.setInt(3, quantity);
+                    insertStatement.setTimestamp(4, currentTime);
+                    insertStatement.setString(5, customerName);
+                    insertStatement.setBoolean(6, orderType.equals("Takeout"));
+                    insertStatement.setDouble(7, getPriceForItem(itemName, quantity));
+                }
+
+                insertStatement.executeUpdate();
+
+                paymentMessage.append(itemName).append(" x").append(quantity).append(" - $").append(String.format("%.2f", getPriceForItem(itemName, quantity))).append("\n");
+
+                maxOrderId = newOrderId;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Error processing payment.");
         }
 
-        // Perform the payment operation here
-        StringBuilder paymentMessage = new StringBuilder("Payment processed for ");
-        paymentMessage.append(customerName).append(" (").append(orderType).append("). Total Amount: $").append(String.format("%.2f", totalAmount)).append("\n");
-        for (Map.Entry<String, Integer> entry : selectedItems.entrySet()) {
-            paymentMessage.append(entry.getKey()).append(" x").append(entry.getValue()).append("\n");
-        }
-        // Add selected addons to the payment message
-        for (Map.Entry<String, List<String>> entry : itemAddons.entrySet()) {
-            String itemName = entry.getKey();
-            List<String> addons = entry.getValue();
-            for (String addon : addons) {
-                paymentMessage.append(" - " + itemName + ": " + addon + "\n");
-            }
-        }
         JOptionPane.showMessageDialog(null, paymentMessage.toString());
         clearOrder();
         itemAddons.clear();
     }
 
-    private List<String> getItemsWithPrices() {
-        // Retrieve items and their prices from the database
-        List<String> itemsWithPrices = new ArrayList<>();
+    private int getMaxOrderIdFromOrdersTable() {
+        int maxOrderId = 0;
+
         try {
             Statement stmt = conn.createStatement();
-            String sqlStatement = "SELECT DISTINCT ItemName, Price FROM items ORDER BY ItemName";
+            String sqlStatement = "SELECT MAX(orderid) FROM orders";
             ResultSet result = stmt.executeQuery(sqlStatement);
-            while (result.next()) {
-                String itemName = result.getString("ItemName");
-                double price = result.getDouble("Price");
-                itemsWithPrices.add(itemName + ": $" + price);
+
+            if (result.next()) {
+                maxOrderId = result.getInt(1);
             }
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, "Error accessing Database.");
+
+            stmt.close();
+            result.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Error retrieving the maximum order ID.");
         }
-        return itemsWithPrices;
+
+        return maxOrderId;
     }
 
+    private int getItemIdFromItemsTable(String itemName) {
+        int itemId = -1;
 
-     
+        try {
+            PreparedStatement stmt = conn.prepareStatement("SELECT itemid FROM items WHERE itemname = ?");
+            System.out.println("ItemName is: " + itemName);
+            stmt.setString(1, itemName);
+            ResultSet result = stmt.executeQuery();
+
+            if (result.next()) {
+                itemId = result.getInt("itemid");
+            } else {
+                System.out.println("No matching item found in the database for itemName: " + itemName);
+            }
+
+            stmt.close();
+            result.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.out.println("Error retrieving item ID from the items table: " + e.getMessage());
+        }
+
+        return itemId;
+    }
+
+    private void updateStock(String customerName) {
+        String[] options = {"Dine-In", "Takeout"};
+        int choice = JOptionPane.showOptionDialog(
+                null,
+                "Is this order for dine-in or takeout?",
+                "Order Type",
+                JOptionPane.DEFAULT_OPTION,
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                options,
+                options[0]
+        );
+
+        // Declare and initialize currentTime within the try block
+        Timestamp currentTime = new Timestamp(System.currentTimeMillis());
+
+        try {
+            PreparedStatement insertStatement = conn.prepareStatement("INSERT INTO orders (orderid, itemid, quantity, time, customername, takeout, price) VALUES (?, ?, ?, ?, ?, ?, ?)");
+
+            int maxOrderId = getMaxOrderIdFromOrdersTable();
+
+            for (Map.Entry<String, Integer> entry : selectedItems.entrySet()) {
+                String fullItemName = entry.getKey();
+                String itemName = fullItemName.split(": \\$")[0];
+                int quantity = entry.getValue();
+
+                int itemId = getItemIdFromItemsTable(itemName);
+                int newOrderId = maxOrderId + 1;
+                String orderType;
+
+                if (itemId == -1) {
+                    double price = getPriceForItem(itemName, quantity);
+                    itemId = -1;
+                    orderType = "Takeout";
+
+                    insertStatement.setInt(1, newOrderId);
+                    insertStatement.setInt(2, itemId);
+                    insertStatement.setInt(3, quantity);
+                    insertStatement.setTimestamp(4, currentTime);
+                    insertStatement.setString(5, customerName);
+                    insertStatement.setBoolean(6, true);
+                    insertStatement.setDouble(7, price);
+                } else {
+                    orderType = (choice == 0) ? "Dine-In" : "Takeout";
+
+                    insertStatement.setInt(1, newOrderId);
+                    insertStatement.setInt(2, itemId);
+                    insertStatement.setInt(3, quantity);
+                    insertStatement.setTimestamp(4, currentTime);
+                    insertStatement.setString(5, customerName);
+                    insertStatement.setBoolean(6, orderType.equals("Takeout"));
+                    insertStatement.setDouble(7, getPriceForItem(itemName, quantity));
+                }
+
+                insertStatement.executeUpdate();
+
+                paymentMessage.append(itemName).append(" x").append(quantity).append(" - $").append(String.format("%.2f", getPriceForItem(itemName, quantity))).append("\n");
+
+                maxOrderId = newOrderId;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Error processing payment.");
+        }
+
+        JOptionPane.showMessageDialog(null, paymentMessage.toString());
+        clearOrder();
+        itemAddons.clear();
+    }
 }
